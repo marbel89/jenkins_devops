@@ -5,13 +5,13 @@
 replicaCount: 3
 
 image:
-  repository: sajjadhz/fastapiapp
+  repository: marbel89/fastapiapp
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
-imagePullSecrets: 
-  - name: "regcred"
+# imagePullSecrets: 
+  # - name: "regcred"
 nameOverride: ""
 fullnameOverride: ""
 

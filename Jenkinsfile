@@ -1,4 +1,3 @@
-   
     environment {
         // DOCKER_REGISTRY = 'marbel89'
         DOCKER_CRED = credentials('DOCKERHUB_CONFIG')
@@ -28,4 +27,3 @@
             }
         }
     }
-}

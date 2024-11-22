@@ -12,10 +12,10 @@ pipeline {
             steps {
                 sh '''
                     # Install Docker
-                    sudo apt-get update
-                    sudo apt-get install -y docker.io docker-compose
-                    sudo systemctl start docker
-                    sudo systemctl enable docker
+                    apt-get update
+                    apt-get install -y docker.io docker-compose
+                    systemctl start docker
+                    systemctl enable docker
                 '''
             }
         }

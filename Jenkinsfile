@@ -16,8 +16,14 @@ pipeline {
        
         stage('Test Docker Build') {
             steps {
-                sh 'docker build -t test-build ./movie-service'
-                sh 'docker build -t test-build ./cast-service'
+                script {
+                    // Build movie service
+                    dir('movie-service') {
+                        sh 'docker build -t test-build-movie .'
+                }
+                    // Build cast service
+                    dir('cast-service') {
+                        sh 'docker build -t test-build-cast .'
             }
         }
         

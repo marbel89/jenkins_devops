@@ -13,6 +13,11 @@ pipeline {
                     volumeMounts:
                       - name: dind-storage
                         mountPath: /var/lib/docker
+                  - name: kubectl
+                    image: bitnami/kubectl
+                    command:
+                      - 'cat'
+                    tty: true
                   volumes:
                   - name: dind-storage
                     emptyDir: {}

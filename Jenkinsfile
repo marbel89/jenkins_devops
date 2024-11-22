@@ -60,7 +60,7 @@ pipeline {
                 container('docker') {
                     withCredentials([usernamePassword(credentialsId: 'DOCKERHUB_CONFIG', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         sh """
-                            echo \$PASSWORD | docker login -u \$USERNAME --password-stdin
+                            echo \$PASSWORD | docker login "docker.io" --username \$USERNAME --password-stdin
                             docker tag jenkins_devops_exams_movie_service ${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}
                             docker tag jenkins_devops_exams_cast_service ${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}
                             docker push ${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}

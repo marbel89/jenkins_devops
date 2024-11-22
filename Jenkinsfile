@@ -1,5 +1,24 @@
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+            yaml '''
+                apiVersion: v1
+                kind: Pod
+                spec:
+                  containers:
+                  - name: docker
+                    image: docker:dind
+                    securityContext:
+                      privileged: true
+                    volumeMounts:
+                      - name: dind-storage
+                        mountPath: /var/lib/docker
+                  volumes:
+                  - name: dind-storage
+                    emptyDir: {}
+            '''
+        }
+    }
    
     environment {
         DOCKER_REGISTRY = 'marbel89'
@@ -8,18 +27,6 @@ pipeline {
     }
    
     stages {
-        stage('Setup Build Environment') {
-            steps {
-                sh '''
-                    # Install Docker
-                    apt-get update
-                    apt-get install -y docker.io docker-compose
-                    systemctl start docker
-                    systemctl enable docker
-                '''
-            }
-        }
-   
         stage('Checkout') {
             steps {
                 checkout scm
@@ -28,14 +35,16 @@ pipeline {
        
         stage('Test Docker Build') {
             steps {
-                script {
-                    // Build movie service
-                    dir('movie-service') {
-                        sh 'docker build -t test-build-movie .'
-                    }
-                    // Build cast service
-                    dir('cast-service') {
-                        sh 'docker build -t test-build-cast .'
+                container('docker') {
+                    script {
+                        // Build movie service
+                        dir('movie-service') {
+                            sh 'docker build -t test-build-movie .'
+                        }
+                        // Build cast service
+                        dir('cast-service') {
+                            sh 'docker build -t test-build-cast .'
+                        }
                     }
                 }
             }

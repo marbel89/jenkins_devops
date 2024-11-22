@@ -1,28 +1,31 @@
-/bin/bash: line 1: qa: command not found   agent any
-    
+   
     environment {
         // DOCKER_REGISTRY = 'marbel89'
         DOCKER_CRED = credentials('DOCKERHUB_CONFIG')
         K3S_KUBECONFIG = credentials('KUBECONFIG')
     }
     
-         stage('Build Docker Images') {
+     stages {
+        stage('Checkout') {
             steps {
-                script {
-                    // Build both services
-                    docker.build("${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}", "./movie-service")
-                    docker.build("${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}", "./cast-service")
-                }
+                checkout scm
             }
         }
        
-        stage('Push Docker Images') {
+        stage('Test Docker Build') {
             steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
-                        docker.image("${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}").push()
-                        docker.image("${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}").push()
-                    }
-                }
+                sh 'docker build -t test-build ./movie-service'
+                sh 'docker build -t test-build ./cast-service'
             }
         }
+        
+        stage('Test Kubernetes Config') {
+            steps {
+                sh '''
+                    export KUBECONFIG=$KUBECONFIG
+                    kubectl get nodes
+                '''
+            }
+        }
+    }
+}

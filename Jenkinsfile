@@ -8,6 +8,18 @@ pipeline {
     }
    
     stages {
+        stage('Setup Build Environment') {
+            steps {
+                sh '''
+                    # Install Docker
+                    sudo apt-get update
+                    sudo apt-get install -y docker.io docker-compose
+                    sudo systemctl start docker
+                    sudo systemctl enable docker
+                '''
+            }
+        }
+   
         stage('Checkout') {
             steps {
                 checkout scm

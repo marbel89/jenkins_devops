@@ -1,10 +1,13 @@
+pipeline {
+    agent any
+   
     environment {
-        // DOCKER_REGISTRY = 'marbel89'
+        DOCKER_REGISTRY = 'marbel89'
         DOCKER_CRED = credentials('DOCKERHUB_CONFIG')
         K3S_KUBECONFIG = credentials('KUBECONFIG')
     }
-    
-     stages {
+   
+    stages {
         stage('Checkout') {
             steps {
                 checkout scm
@@ -21,9 +24,10 @@
         stage('Test Kubernetes Config') {
             steps {
                 sh '''
-                    export KUBECONFIG=$KUBECONFIG
+                    export KUBECONFIG=$K3S_KUBECONFIG
                     kubectl get nodes
                 '''
             }
         }
     }
+}

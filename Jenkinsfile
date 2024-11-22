@@ -1,8 +1,7 @@
-pipeline {
-    agent any
+/bin/bash: line 1: qa: command not found   agent any
     
     environment {
-        # DOCKER_REGISTRY = 'marbel89'
+        // DOCKER_REGISTRY = 'marbel89'
         DOCKER_CRED = credentials('DOCKERHUB_CONFIG')
         K3S_KUBECONFIG = credentials('KUBECONFIG')
     }

@@ -35,32 +35,51 @@ pipeline {
             }
         }
 
-        stage('Test Docker Build') {
-            steps {
-                container('docker') {
-                    script {
-                        // Build movie service
-                        dir('movie-service') {
-                            sh 'docker build -t test-build-movie .'
-                        }
-                        // Build cast service
-                        dir('cast-service') {
-                            sh 'docker build -t test-build-cast .'
-                        }
-                    }
-                }
+stage('Build') {
+    steps {
+        container('docker') {
+            script {
+                sh 'docker-compose build'
             }
         }
+    }
+}
 
-        stage('Test Kubernetes Config') {
-            steps {
-                container('kubectl') {
-                    sh '''
-                        export KUBECONFIG=$K3S_KUBECONFIG
-                        kubectl get nodes
-                    '''
-                }
+stage('Test') {
+    steps {
+        container('docker') {
+            script {
+                sh 'docker-compose up -d'
+                // Add tests here
+                sh 'docker-compose down'
             }
+        }
+    }
+}
+stage('Push Docker Images') {
+    steps {
+        container('docker') {
+            withCredentials([usernamePassword(credentialsId: 'DOCKERHUB_CONFIG', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                sh """
+                    echo \$PASSWORD | docker login -u \$USERNAME --password-stdin
+                    docker tag jenkins_devops_exams_movie_service ${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}
+                    docker tag jenkins_devops_exams_cast_service ${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}
+                    docker push ${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}
+                    docker push ${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}
+                """
+            }
+        }
+    }
+}
+stage('Deploy to Dev') {
+    when { branch 'develop' }
+    steps {
+        container('kubectl') {
+            sh """
+                helm upgrade --install microservices ./charts \
+                    --set image.tag=${BUILD_NUMBER} \
+                    --namespace dev
+            """
         }
     }
 }

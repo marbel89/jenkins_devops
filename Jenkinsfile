@@ -86,9 +86,4 @@ pipeline {
             }
         }
     }
-    post {
-        always {
-            deleteDir()
-        }
-    }
 }

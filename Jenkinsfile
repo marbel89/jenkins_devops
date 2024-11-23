@@ -74,40 +74,28 @@ pipeline {
         stage('Deploy to Dev') {
     steps {
         container('kubectl') {
-            withKubeConfig([credentialsId: 'KUBECONFIG']) { 
-                sh '''
-                    mkdir -p $HOME/.kube
-                    cp $KUBECONFIG_FILE $HOME/.kube/config
-                    chmod 600 $HOME/.kube/config                   
-
-
-                    echo "=== Kubeconfig Debug ==="
-                    echo "KUBECONFIG location:"
-                    echo $KUBECONFIG
-                    echo "\nKubeconfig contents (sanitized):"
-                    kubectl config view
-                    echo "\nCurrent context:"
-                    kubectl config current-context
-                    
-                    echo "\n=== Cluster Connectivity ==="
-                    echo "Cluster info:"
-                    kubectl cluster-info
-                    echo "\nNodes:"
-                    kubectl get nodes
-                    
-                    echo "\n=== Helm Debug ==="
-                    echo "Helm repositories:"
-                    helm repo list
-                    echo "\nHelm releases in dev namespace:"
-                    helm list -n dev
-                '''
-
-                sh """
-                    helm upgrade --install microservices ./charts \
-                        --set image.tag=${BUILD_NUMBER} \
-                        --namespace dev
-                        --debug
-                """
+                    withKubeConfig([
+                        credentialsId: 'KUBECONFIG',
+                        serverUrl: 'https://172.17.215.95:6443'
+                    ]) {
+                        sh '''
+                            # Debug information
+                            echo "=== Kubeconfig Debug ==="
+                            kubectl config view
+                            echo "\nCluster info:"
+                            kubectl cluster-info
+                            echo "\nNodes:"
+                            kubectl get nodes
+                            
+                            # Create namespace if it doesn't exist
+                            kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
+                        '''
+                        
+                        sh """
+                            helm upgrade --install microservices ./charts \
+                                --set image.tag=${BUILD_NUMBER} \
+                                --namespace dev
+                        """
            
             }
         }

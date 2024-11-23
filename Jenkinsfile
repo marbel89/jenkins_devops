@@ -78,25 +78,48 @@ pipeline {
                         credentialsId: 'KUBECONFIG',
                         serverUrl: 'https://172.17.215.95:6443'
                     ]) {
-                        sh '''
-                            # Debug information
-                            echo "=== Kubeconfig Debug ==="
-                            kubectl config view
-                            echo "\nCluster info:"
-                            kubectl cluster-info
-                            echo "\nNodes:"
-                            kubectl get nodes
-                            
-                            # Create namespace if it doesn't exist
-                            kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
-                        '''
-                        
-                        sh """
-                            helm upgrade --install microservices ./charts \
-                                --set image.tag=${BUILD_NUMBER} \
-                                --namespace dev
-                        """
-           
+                sh '''
+                    # Debug information
+                    echo "=== Kubeconfig Debug ==="
+                    kubectl config view
+                    kubectl config current-context
+                    kubectl get nodes
+                    
+                    # Check existing services
+                    echo "\n=== Existing Services ==="
+                    kubectl get services -n dev
+                    
+                    # Verify helm chart
+                    echo "\n=== Helm Chart Verification ==="
+                    helm lint ./charts
+                    helm template ./charts
+                    
+                    # Create namespace if it doesn't exist
+                    kubectl create namespace dev --dry-run=client -o yaml | kubectl apply -f -
+                '''
+                
+                sh """
+                    # Deploy with debug
+                    helm upgrade --install microservices ./charts \
+                        --debug \
+                        --dry-run \
+                        --set image.tag=${BUILD_NUMBER} \
+                        --namespace dev
+                    
+                    # Actual deployment
+                    helm upgrade --install microservices ./charts \
+                        --set image.tag=${BUILD_NUMBER} \
+                        --namespace dev
+                """
+                
+                sh '''
+                    # Verify deployment
+                    echo "\n=== Deployment Status ==="
+                    kubectl get all -n dev
+                    
+                    echo "\n=== Service Details ==="
+                    kubectl describe service microservices-fastapiapp -n dev
+                '''
             }
         }
     }

@@ -70,22 +70,41 @@ pipeline {
             }
         }
         stage('Deploy to Dev') {
-            /* when { 
-                branch 'develop' 
-            }*/
-            steps {
-                container('kubectl') {
-                    withKubeConfig([credentialsId: 'KUBECONFIG']) {
-                        sh 'pwd && ls -la'  // Debug: check our working directory and files
-                        sh 'helm version'   // Debug: verify helm is available
-                        sh """
-                            helm upgrade --install microservices ./charts \
-                                --set image.tag=${BUILD_NUMBER} \
-                                --namespace dev
-                        """
-                    }
-                }
+    steps {
+        container('kubectl') {
+            withKubeConfig([credentialsId: 'KUBECONFIG']) { 
+                sh '''
+                    echo "=== Kubeconfig Debug ==="
+                    echo "KUBECONFIG location:"
+                    echo $KUBECONFIG
+                    echo "\nKubeconfig contents (sanitized):"
+                    kubectl config view
+                    echo "\nCurrent context:"
+                    kubectl config current-context
+                    
+                    echo "\n=== Cluster Connectivity ==="
+                    echo "Cluster info:"
+                    kubectl cluster-info
+                    echo "\nNodes:"
+                    kubectl get nodes
+                    
+                    echo "\n=== Helm Debug ==="
+                    echo "Helm repositories:"
+                    helm repo list
+                    echo "\nHelm releases in dev namespace:"
+                    helm list -n dev
+                '''
+
+                sh """
+                    helm upgrade --install microservices ./charts \
+                        --set image.tag=${BUILD_NUMBER} \
+                        --namespace dev
+                        --debug
+                """
+           
             }
         }
+    }
+}
     }
 }

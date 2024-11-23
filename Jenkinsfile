@@ -19,8 +19,8 @@ pipeline {
                       - cat
                     tty: true
                   volumes:
-                  - name: dind-storage
-                    emptyDir: {}
+                    - name: dind-storage
+                      emptyDir: {}
             '''
         }
     }
@@ -58,27 +58,36 @@ pipeline {
         stage('Push Docker Images') {
             steps {
                 container('docker') {
+                    sh """
+                        echo $DOCKER_CRED_PSW | docker login -u $DOCKER_CRED_USR --password-stdin
+                        docker tag jenkins_devops_exams_movie_service ${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}
+                        docker tag jenkins_devops_exams_cast_service ${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}
+                        docker push ${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}
+                        docker push ${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}
+                    """
+                }
+            }
+        }
+        stage('Deploy to Dev') {
+            when { 
+                branch 'develop' 
+            }
+            steps {
+                container('kubectl') {
+                    withKubeConfig([credentialsId: 'KUBECONFIG']) {
                         sh """
-                            echo $DOCKER_CRED_PSW | docker login -u $DOCKER_CRED_USR --password-stdin
-                            docker tag jenkins_devops_exams_movie_service ${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}
-                            docker tag jenkins_devops_exams_cast_service ${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}
-                            docker push ${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}
-                            docker push ${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}
+                            helm upgrade --install microservices ./charts \
+                                --set image.tag=${BUILD_NUMBER} \
+                                --namespace dev
                         """
                     }
                 }
             }
         }
-        stage('Deploy to Dev') {
-            when { branch 'develop' }
-            steps {
-                container('kubectl') {
-                    sh """
-                        helm upgrade --install microservices ./charts \
-                            --set image.tag=${BUILD_NUMBER} \
-                            --namespace dev
-                    """
-                }
-            }
+    }
+    post {
+        always {
+            cleanWs()
         }
     }
+}

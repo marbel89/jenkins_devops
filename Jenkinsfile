@@ -14,7 +14,7 @@ pipeline {
                       - name: dind-storage
                         mountPath: /var/lib/docker
                   - name: kubectl
-                    image: bitnami/kubectl
+                    image: dtzar/helm-kubectl:latest
                     command:
                       - cat
                     tty: true
@@ -76,6 +76,8 @@ pipeline {
             steps {
                 container('kubectl') {
                     withKubeConfig([credentialsId: 'KUBECONFIG']) {
+                        sh 'pwd && ls -la'  // Debug: check our working directory and files
+                        sh 'helm version'   // Debug: verify helm is available
                         sh """
                             helm upgrade --install microservices ./charts \
                                 --set image.tag=${BUILD_NUMBER} \

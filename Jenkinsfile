@@ -5,6 +5,8 @@ pipeline {
                 apiVersion: v1
                 kind: Pod
                 spec:
+                  hostNetwork: true
+                  dnsPolicy: ClusterFirstWithHostNet
                   containers:
                   - name: docker
                     image: docker:dind

@@ -70,9 +70,9 @@ pipeline {
             }
         }
         stage('Deploy to Dev') {
-            when { 
+            /* when { 
                 branch 'develop' 
-            }
+            }*/
             steps {
                 container('kubectl') {
                     withKubeConfig([credentialsId: 'KUBECONFIG']) {

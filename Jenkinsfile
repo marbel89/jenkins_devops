@@ -58,12 +58,13 @@ pipeline {
         stage('Push Docker Images') {
             steps {
                 container('docker') {
+                    sh 'docker images'
                     sh """
-                        echo $DOCKER_CRED_PSW | docker login -u $DOCKER_CRED_USR --password-stdin
-                        docker tag jenkins_devops_exams_movie_service ${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}
-                        docker tag jenkins_devops_exams_cast_service ${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}
-                        docker push ${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}
-                        docker push ${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}
+                    echo $DOCKER_CRED_PSW | docker login -u $DOCKER_CRED_USR --password-stdin
+                    docker tag microservices-pipeline_movie_service ${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}
+                    docker tag microservices-pipeline_cast_service ${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}
+                    docker push ${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}
+                    docker push ${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}
                     """
                 }
             }
@@ -87,7 +88,6 @@ pipeline {
     }
     post {
         always {
-            sh 'docker logout'
             deleteDir()
         }
     }

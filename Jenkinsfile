@@ -74,8 +74,13 @@ pipeline {
         stage('Deploy to Dev') {
     steps {
         container('kubectl') {
-            withKubeConfig([credentialsId: 'KUBECONFIG']) { 
+            withKubeConfig([file(credentialsId: 'KUBECONFIG', variable: 'KUBECONFIG_FILE')]) { 
                 sh '''
+                    mkdir -p $HOME/.kube
+                    cp $KUBECONFIG_FILE $HOME/.kube/config
+                    chmod 600 $HOME/.kube/config                   
+
+
                     echo "=== Kubeconfig Debug ==="
                     echo "KUBECONFIG location:"
                     echo $KUBECONFIG

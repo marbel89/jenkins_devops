@@ -74,7 +74,7 @@ pipeline {
         stage('Deploy to Dev') {
     steps {
         container('kubectl') {
-            withKubeConfig([file(credentialsId: 'KUBECONFIG', variable: 'KUBECONFIG_FILE')]) { 
+            withKubeConfig([credentialsId: 'KUBECONFIG']) { 
                 sh '''
                     mkdir -p $HOME/.kube
                     cp $KUBECONFIG_FILE $HOME/.kube/config

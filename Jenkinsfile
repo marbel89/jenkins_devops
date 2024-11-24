@@ -51,7 +51,6 @@ pipeline {
                 container('docker') {
                     script {
                         sh 'docker-compose up -d'
-                        // Add tests here
                         sh 'docker-compose down'
                     }
                 }
@@ -61,22 +60,22 @@ pipeline {
             steps {
                 container('docker') {
                     sh 'docker images'
-                    /*sh """
+                    sh """
                     echo $DOCKER_CRED_PSW | docker login -u $DOCKER_CRED_USR --password-stdin
                     docker tag microservices-pipeline-movie_service ${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}
                     docker tag microservices-pipeline-cast_service ${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}
                     docker push ${DOCKER_REGISTRY}/movie-service:${BUILD_NUMBER}
                     docker push ${DOCKER_REGISTRY}/cast-service:${BUILD_NUMBER}
-                    """*/
+                    """
                 }
             }
         }
         stage('Deploy to Dev') {
-    steps {
-        container('kubectl') {
+            steps {
+                container('kubectl') {
                     withKubeConfig([
                         credentialsId: 'KUBECONFIG',
-                        serverUrl: 'https://172.17.215.95:6443'
+                        // serverUrl: 'https://172.17.215.95:6443'
                     ]) {
                 sh '''
                     # Debug information
@@ -124,5 +123,61 @@ pipeline {
         }
     }
 }
+
+stage('Deploy to QA') {
+    when {
+        branch 'qa'
+    }
+    steps {
+        container('kubectl') {
+            withKubeConfig([credentialsId: 'KUBECONFIG']) {
+                sh """
+                    helm upgrade --install microservices ./charts \
+                        --set image.tag=${BUILD_NUMBER} \
+                        --namespace qa
+                """
+            }
+        }
+    }
+}
+
+stage('Deploy to Staging') {
+    when {
+        branch 'staging'
+    }
+    steps {
+        container('kubectl') {
+            withKubeConfig([credentialsId: 'KUBECONFIG']) {
+                sh """
+                    helm upgrade --install microservices ./charts \
+                        --set image.tag=${BUILD_NUMBER} \
+                        --namespace staging
+                """
+            }
+        }
+    }
+}
+
+stage('Deploy to Production') {
+    when {
+        branch 'master'
+    }
+    steps {
+        // Manual approval required for prod
+        input message: 'Deploy to production?'
+        
+        container('kubectl') {
+            withKubeConfig([credentialsId: 'KUBECONFIG']) {
+                sh """
+                    helm upgrade --install microservices ./charts \
+                        --set image.tag=${BUILD_NUMBER} \
+                        --namespace prod
+                """
+            }
+        }
+    }
+}
+
+
     }
 }
